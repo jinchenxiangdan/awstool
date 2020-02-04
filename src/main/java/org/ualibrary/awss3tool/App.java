@@ -7,28 +7,45 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.transfer.TransferManager;
 
-import java.io.FileInputStream;
+
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.io.File;
 
 import java.nio.file.Paths;
-import java.util.Map;
+import java.util.Scanner;
+
 
 /**
- * Hello world!
  *
  */
 public class App 
 {
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-west-1").build();
+
+        // check folder or file
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter file/folder path");
+        String input = scanner.next();
+        Path file = new File(input).toPath();
+        // check if the file exist or not
+        if (Files.exists(file)) {
+
+        } else {
+            // the file doesn't exist
+        }
+        // check the path is a file or folder
+        if (Files.isDirectory(file)) {
+
+        } else {
+            // other?
+        }
 
 
         List<Bucket> buckets = getBuckets(s3);
@@ -57,7 +74,9 @@ public class App
 
         assert process != null;
         if (process.exitValue() == 0) {
-
+            System.out.println("Done.");
+        } else {
+            System.out.println("Something Wrong.");
         }
         System.out.printf("exist value: %d", process.exitValue());
 
@@ -66,11 +85,11 @@ public class App
     }
 
 
-
-
-
-
-
+    /**
+     *  get buckets that the user has
+     * @param s3 AmazonS3 service
+     * @return A List of Buckets
+     */
     private static List<Bucket> getBuckets(AmazonS3 s3) {
         List<Bucket> bucketList = s3.listBuckets();
 
@@ -85,6 +104,12 @@ public class App
     }
 
 
+    /**
+     * upload file to the aws s3
+     * @param s3 AmazonS3 service
+     * @param filePath string path to file
+     * @param bucketName the bucket name will be upload to
+     */
     private static void putObject(AmazonS3 s3, String filePath, String bucketName) {
         System.out.format("Uploading %s to S3 bucket %s...\n", filePath, bucketName);
         String keyName = Paths.get(filePath).getFileName().toString();
@@ -100,8 +125,12 @@ public class App
         System.out.println("Done.");
     }
 
+    /**
+     * pull file/folder from aws s3
+     */
+    private static void pullFile() {
 
-
+    }
 
 
 
