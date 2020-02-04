@@ -12,10 +12,12 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.io.File;
 
 import java.nio.file.Paths;
+import java.util.Map;
 
 /**
  * Hello world!
@@ -35,20 +37,29 @@ public class App
         String folderPath = "/home/wan/Desktop/ShawnJin_Workspace/testFolder";
         String bucketName = buckets.get(2).getName();
 
-        putObject(s3, filePath, bucketName);
+//        putObject(s3, filePath, bucketName);
 
-//        test part
+
+        // get folder
+
+        // running script
+        ProcessBuilder processBuilder = new ProcessBuilder("/home/wan/Desktop/ShawnJin_Workspace/awstool/src/main/bash_script/awss3tool.sh", "arg1");
+
+        Process process = null;
+        // run
         try {
-
-
-
-
-            FileInputStream stream = new FileInputStream(folderPath);
-            ObjectMetadata objectMetadata = new ObjectMetadata();
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, Paths.get(filePath).getFileName().toString() ,stream , objectMetadata);
-        } catch (Exception e) {
+            System.out.println("uploading...");
+            process = processBuilder.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+
+        assert process != null;
+        if (process.exitValue() == 0) {
+
+        }
+        System.out.printf("exist value: %d", process.exitValue());
 
 
 
