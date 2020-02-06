@@ -12,14 +12,12 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.io.File;
 import java.nio.file.Paths;
-import java.util.Scanner;
+import java.util.*;
 
 
 /**
@@ -28,17 +26,17 @@ import java.util.Scanner;
 public class App 
 {
     private static final String DELIMITER = "/";
-    private static final String DEFAULT_FOLDER = "";
+//    private static final String DEFAULT_FOLDER = "";
 
     private static final String ORDERS = "0: List all objects.\n" +
             "1: List file & folders in current file.\n" +
-            "2: Upload file/folder (Usage: 2 [path to file/folder] [target position])" +
-            "3: Download file/folder (Usage : 3 [path to file/folder] [target position])" +
-            "cd: Get in folder" +
-            "q: Quit.";
+            "2: Upload file/folder (Usage: 2 [path to file/folder] [target position])\n" +
+            "3: Download file/folder (Usage : 3 [path to file/folder] [target position])\n" +
+            "cd: Get in folder\n" +
+            "q: Quit.\n";
 
     private static AmazonS3 S3;
-    private static HashMap<String, Bucket> BUCKETS_MAP;
+    private static Map<String, Bucket> BUCKETS_MAP = new HashMap<>();
 
     public static void main( String[] args )
     {
@@ -68,48 +66,67 @@ public class App
         System.out.println(ORDERS);
 
         // read commands from user
-        String orders = scanner.next();
-        String[] commands = orders.trim().split("");
+        String orders = scanner.nextLine();
+        String[] commands = orders.trim().split(" ");
         while (!commands[0].equals("q")) {
             switch (commands[0]) {
                 case "0":
                     listAllObjects(currentBucketName);
+
+                    orders = scanner.nextLine();
+                    commands = orders.trim().split(" ");
                     break;
 
                 case "1":
                     listObjects(currentBucketName, prefix);
+
+                    orders = scanner.nextLine();
+                    commands = orders.trim().split(" ");
                     break;
                 case "2":
                     // check the file path is valid or not
+                    System.out.println("test");
+                    System.out.println(Arrays.toString(commands));
+                    System.out.println("test");
                     int type = fileChecker(commands[1]);
                     if (type == -1) {
                         System.out.println("Error: Invalid path.");
+                        orders = scanner.nextLine();
+                        commands = orders.trim().split(" ");
                         break;
                     }
                     // check the target bucket is valid or not
                     if (!BUCKETS_MAP.containsKey(commands[2])) {
                         System.out.println("Error: Invalid bucket name.");
+                        orders = scanner.nextLine();
+                        commands = orders.trim().split(" ");
                         break;
                     }
                     // upload
                     StringBuilder targetPath = new StringBuilder();
-                    targetPath.append("s3://");
+//                    targetPath.append("s3://");
                     targetPath.append(currentBucketName);
                     targetPath.append(prefix);
-
+                    System.out.printf("target path is : %s\n", targetPath);
                     if (type == 1) {            // upload file
                         System.out.println(targetPath.toString());
                         if (!uploadFolder(commands[1], targetPath.toString())) {
                             System.err.println("Upload failed!");
+                            orders = scanner.nextLine();
+                            commands = orders.trim().split(" ");
                             break;
                         }
 
                     } else if (type == 2) {     // upload folder
                         if (!uploadFile(commands[1], targetPath.toString())) {
                             System.err.println("Upload failed!");
+                            orders = scanner.nextLine();
+                            commands = orders.trim().split(" ");
                             break;
                         }
                     }
+                    orders = scanner.nextLine();
+                    commands = orders.trim().split(" ");
                     break;
 
 
@@ -117,11 +134,16 @@ public class App
 
                 case "cd":
                     System.out.println("still working on it");
+
+                    orders = scanner.nextLine();
+                    commands = orders.trim().split(" ");
                     break;
 
                 default:
                     System.out.println("Invalid input, please try it again.");
                     System.out.println(ORDERS);
+                    orders = scanner.nextLine();
+                    commands = orders.trim().split(" ");
             }
 
 
@@ -202,9 +224,9 @@ public class App
         System.out.format("Uploading %s to S3 bucket %s...\n", filePath, bucketName);
         // running script
 
-        ProcessBuilder processBuilder = new ProcessBuilder(scriptPath, "arg1");
+        ProcessBuilder processBuilder = new ProcessBuilder(scriptPath, filePath, bucketName);
 
-        Process process = null;
+        Process process;
         // run
         try {
             System.out.println("uploading...");
@@ -224,11 +246,7 @@ public class App
             return false;
         }
 //        System.out.printf("exist value: %d", process.exitValue());
-        if (process.exitValue() != 0) {
-            return false;
-        } else {
-            return true;
-        }
+        return process.exitValue() == 0;
 
     }
 
@@ -266,8 +284,6 @@ public class App
     private static void downloadFolder(String filePath, String targetPath) {
         // need to cp command
     }
-
-
 
 
 
