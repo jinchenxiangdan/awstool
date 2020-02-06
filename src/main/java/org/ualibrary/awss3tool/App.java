@@ -54,6 +54,7 @@ public class App
         Scanner scanner = new Scanner(System.in);
         // ask user and access bucket
         System.out.println("Input the index of bucket you want to access.");
+        System.out.print("$ ");
         int index = scanner.nextInt();
         while (index > buckets.size()) {
             System.out.println("Invalid index. please try input again.");
@@ -66,23 +67,25 @@ public class App
         System.out.println(ORDERS);
 
         // read commands from user
+        System.out.print("$ ");
         String orders = scanner.nextLine();
         String[] commands = orders.trim().split(" ");
         while (!commands[0].equals("q")) {
             switch (commands[0]) {
                 case "0":
                     listAllObjects(currentBucketName);
-
+                    System.out.print("$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
                     break;
 
                 case "1":
                     listObjects(currentBucketName, prefix);
-
+                    System.out.print("$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
                     break;
+
                 case "2":
                     // check the file path is valid or not
                     System.out.println("test");
@@ -91,6 +94,7 @@ public class App
                     int type = fileChecker(commands[1]);
                     if (type == -1) {
                         System.out.println("Error: Invalid path.");
+                        System.out.print("$ ");
                         orders = scanner.nextLine();
                         commands = orders.trim().split(" ");
                         break;
@@ -98,13 +102,14 @@ public class App
                     // check the target bucket is valid or not
                     if (!BUCKETS_MAP.containsKey(commands[2])) {
                         System.out.println("Error: Invalid bucket name.");
+                        System.out.print("$ ");
                         orders = scanner.nextLine();
                         commands = orders.trim().split(" ");
                         break;
                     }
                     // upload
                     StringBuilder targetPath = new StringBuilder();
-//                    targetPath.append("s3://");
+
                     targetPath.append(currentBucketName);
                     targetPath.append(prefix);
                     System.out.printf("target path is : %s\n", targetPath);
@@ -112,6 +117,7 @@ public class App
                         System.out.println(targetPath.toString());
                         if (!uploadFolder(commands[1], targetPath.toString())) {
                             System.err.println("Upload failed!");
+                            System.out.print("$ ");
                             orders = scanner.nextLine();
                             commands = orders.trim().split(" ");
                             break;
@@ -120,21 +126,20 @@ public class App
                     } else if (type == 2) {     // upload folder
                         if (!uploadFile(commands[1], targetPath.toString())) {
                             System.err.println("Upload failed!");
+                            System.out.print("$ ");
                             orders = scanner.nextLine();
                             commands = orders.trim().split(" ");
                             break;
                         }
                     }
+                    System.out.print("$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
                     break;
 
-
-
-
                 case "cd":
                     System.out.println("still working on it");
-
+                    System.out.print("$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
                     break;
@@ -142,6 +147,7 @@ public class App
                 default:
                     System.out.println("Invalid input, please try it again.");
                     System.out.println(ORDERS);
+                    System.out.print("$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
             }
