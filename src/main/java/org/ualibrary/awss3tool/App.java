@@ -19,7 +19,8 @@ import java.util.*;
 
 /**
  * NOTE: Before running this program, please run 'aws configure' to configure your 'access key' and 'secret access key'
- *
+ * author: Shawn Jin
+ * 
  */
 public class App 
 {
