@@ -14,9 +14,6 @@ if [[ $# -lt 2 ]]; then
     exit 2
 fi
 
-echo "parameter one is: $1."
-echo "parameter one is: $2."
-
 echo "uploading folder..."
 folder_name=$(basename "$1")
 

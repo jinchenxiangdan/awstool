@@ -12,8 +12,6 @@ if [[ $# -lt 2 ]]; then
 fi
 echo "aws s3 cp s3://$1 $2 " > download_log
 
-echo "parameter one is: $1."
-echo "parameter one is: $2."
 if [[ ! -e $2 ]]; then
   echo "Target file doesn't exist, creating folder..." >> download_log
   mkdir "$2"

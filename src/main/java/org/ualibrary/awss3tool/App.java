@@ -27,9 +27,11 @@ import java.util.*;
  */
 public class App 
 {
-    private static final String DELIMITER = "/";
-//    private static final String DEFAULT_FOLDER = "";
+    private enum FileType {
+        NOT_EXIST, REGULAR_FILE, FOLDER, UNKOWN
+    }
 
+    private static final String DELIMITER = "/";
     private static final String ORDERS = "0: List all objects.\n" +
             "ls: List file & folders in current file.\n" +
             "ul: Upload file/folder (Usage: ul [path to file/folder] [target position])\n" +
@@ -99,8 +101,8 @@ public class App
                         break;
                     }
                     // check the file path is valid or not
-                    int type = fileChecker(commands[1]);
-                    if (type == -1) {
+                    FileType type = fileChecker(commands[1]);
+                    if (type == FileType.NOT_EXIST) {
                         System.out.println("Error: Invalid path.");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -118,7 +120,7 @@ public class App
                     // upload
 
                     System.out.printf("target path is : %s\n", getCurrentPosition());
-                    if (type == 1) {            // upload file
+                    if (type == FileType.REGULAR_FILE) {            // upload file
                         System.out.println(getCurrentPosition());
                         if (!uploadFolder(commands[1], currentBucketName + getCurrentPosition())) {
                             System.err.println("Upload failed!");
@@ -128,7 +130,7 @@ public class App
                             break;
                         }
 
-                    } else if (type == 2) {     // upload folder
+                    } else if (type == FileType.FOLDER) {     // upload folder
                         if (!uploadFile(commands[1], currentBucketName + getCurrentPosition())) {
                             System.err.println("Upload failed!");
                             System.out.print(getCurrentPosition() + "$ ");
@@ -150,8 +152,8 @@ public class App
                         commands = orders.trim().split(" ");
                         break;
                     }
-                    int fileType = fileChecker(commands[2]);
-                    if (fileType == -1) {
+                    type = fileChecker(commands[2]);
+                    if (type == FileType.NOT_EXIST) {
                         System.out.println("Error: Invalid path.");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -222,24 +224,24 @@ public class App
      *          1: is directory
      *          2: is regular file
      */
-    private static int fileChecker(String input) {
+    private static FileType fileChecker(String input) {
         if (input == null || input.equals("")) {
-            return -1;
+            return FileType.NOT_EXIST;
         }
         Path file = new File(input).toPath();
         // check if the file exist or not
         if (!Files.exists(file)) {
             System.err.printf("Error: Cannot find file %s.\n", file);
-            return -1;
+            return FileType.NOT_EXIST;
         }
         // check the path is a file or folder
         if (Files.isDirectory(file)) {
-            return 1;
+            return FileType.FOLDER;
         } else if (Files.isRegularFile(file)) {
-            return 2;
+            return FileType.REGULAR_FILE;
         } else {
             System.out.println("Unknown file type");
-            return -1;
+            return FileType.UNKOWN;
         }
     }
 
