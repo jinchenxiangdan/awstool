@@ -1,0 +1,3 @@
+aws s3 cp s3://ualibrary/test@Folder /home/wan/Desktop 
+creating folder test@Folder... 
+aws s3 cp s3://ualibrary/test@Folder /home/wan/Desktop/test@Folder --recursive
