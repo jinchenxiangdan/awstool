@@ -1,9 +1,7 @@
 package org.ualibrary.awss3tool;
 
 
-
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
@@ -11,8 +9,6 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
-
-import javax.xml.stream.events.StartDocument;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,10 +24,22 @@ import java.util.*;
 public class App 
 {
     private enum FileType {
-        NOT_EXIST, REGULAR_FILE, FOLDER, UNKOWN
+        NOT_EXIST, REGULAR_FILE, FOLDER, UNKNOWN
     }
 
     private static final String DELIMITER = "/";
+
+    private static final int EXIT_SUCCESS = 0;
+    private static final int COMMAND_INDEX = 0;
+    private static final int UPLOAD_FILE_COMMAND_MAX_LENGTH = 3;
+    private static final int UPLOAD_TARGET_BUCKET_INDEX = 2;
+    private static final int UPLOAD_FILE_PATH_INDEX = 1;
+    private static final int DOWNLOAD_FILE_COMMAND_MAX_LENGTH = 3;
+    private static final int DOWNLOAD_TARGET_FILE_INDEX = 2;
+    private static final int DOWNLOAD_BUCKET_PATH_INDEX = 1;
+    private static final int CD_COMMAND_LENGTH = 2;
+    private static final int CD_COMMAND_INDEX = 1;
+
     private static final String ORDERS = "0: List all objects.\n" +
             "ls: List file & folders in current file.\n" +
             "ul: Upload file/folder (Usage: ul [path to file/folder] [target position])\n" +
@@ -39,18 +47,13 @@ public class App
             "cd: Get in folder\n" +
             "q: Quit.\n";
 
+
     private static AmazonS3 S3;
     private static Map<String, Bucket> BUCKETS_MAP = new HashMap<>();
     private static LinkedList<String> CURRENT_PATH = new LinkedList<>();
 
     public static void main( String[] args )
     {
-
-        // test parameters
-        String filePath = "/home/wan/Desktop/ShawnJin_Workspace/testFolder/test.txt";
-        String folderPath = "/home/wan/Desktop/ShawnJin_Workspace/testFolder";
-        // end test
-
 
         S3 = AmazonS3ClientBuilder.standard().withRegion("us-west-1").build();
 
@@ -76,7 +79,7 @@ public class App
         scanner.nextLine();
         String orders = scanner.nextLine();
         String[] commands = orders.trim().split(" ");
-        while (!commands[0].equals("q")) {
+        while (!commands[COMMAND_INDEX].equals("q")) {
             switch (commands[0]) {
                 case "0":
                     listAllObjects(currentBucketName);
@@ -93,7 +96,7 @@ public class App
                     break;
 
                 case "ul":
-                    if (commands.length != 3) {
+                    if (commands.length != UPLOAD_FILE_COMMAND_MAX_LENGTH) {
                         System.out.println("Usage: ul [path to file/folder] [target position]");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -101,7 +104,7 @@ public class App
                         break;
                     }
                     // check the file path is valid or not
-                    FileType type = fileChecker(commands[1]);
+                    FileType type = fileChecker(commands[UPLOAD_FILE_PATH_INDEX]);
                     if (type == FileType.NOT_EXIST) {
                         System.out.println("Error: Invalid path.");
                         System.out.print(getCurrentPosition() + "$ ");
@@ -110,7 +113,7 @@ public class App
                         break;
                     }
                     // check the target bucket is valid or not
-                    if (!BUCKETS_MAP.containsKey(commands[2])) {
+                    if (!BUCKETS_MAP.containsKey(commands[UPLOAD_TARGET_BUCKET_INDEX])) {
                         System.out.println("Error: Invalid bucket name.");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -131,7 +134,7 @@ public class App
                         }
 
                     } else if (type == FileType.FOLDER) {     // upload folder
-                        if (!uploadFile(commands[1], currentBucketName + getCurrentPosition())) {
+                        if (!uploadFile(commands[UPLOAD_FILE_PATH_INDEX], currentBucketName + getCurrentPosition())) {
                             System.err.println("Upload failed!");
                             System.out.print(getCurrentPosition() + "$ ");
                             orders = scanner.nextLine();
@@ -145,14 +148,14 @@ public class App
                     break;
 
                 case "dl":
-                    if (commands.length != 3) {
+                    if (commands.length != DOWNLOAD_FILE_COMMAND_MAX_LENGTH) {
                         System.out.println("Usage : dl [path to file/folder] [target position]");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
                         commands = orders.trim().split(" ");
                         break;
                     }
-                    type = fileChecker(commands[2]);
+                    type = fileChecker(commands[DOWNLOAD_TARGET_FILE_INDEX]);
                     if (type == FileType.NOT_EXIST) {
                         System.out.println("Error: Invalid path.");
                         System.out.print(getCurrentPosition() + "$ ");
@@ -160,8 +163,8 @@ public class App
                         commands = orders.trim().split(" ");
                         break;
                     }
-                    if (!downloadFiles(currentBucketName + "/" + getCurrentPosition() + commands[1],
-                            commands[2])) {
+                    if (!downloadFiles(currentBucketName + "/" + getCurrentPosition() + commands[DOWNLOAD_BUCKET_PATH_INDEX],
+                            commands[DOWNLOAD_TARGET_FILE_INDEX])) {
                         System.out.println("Script runs failed.");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -176,7 +179,7 @@ public class App
                     break;
                 case "cd":
                     // check the user input 
-                    if (commands.length != 2) {
+                    if (commands.length != CD_COMMAND_LENGTH) {
                         System.out.println("Usage: cd [target position]");
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
@@ -184,25 +187,24 @@ public class App
                         break;
                     }
                     // check the command and path is valid or not 
-                    if (commands[1].equals("..") || commands[1].equals("../")) {
+                    if (commands[CD_COMMAND_INDEX].equals("..") || commands[CD_COMMAND_INDEX].equals("../")) {
                         CURRENT_PATH.pollLast();
                     }else {
+                        // delete the last item in path
                         CURRENT_PATH.add(commands[1]);
                         System.out.print(getCurrentPosition() + "$ ");
                         orders = scanner.nextLine();
                         commands = orders.trim().split(" ");
                         break;
                     }
-
-
-
-
+                    // print out log information
                     System.out.print(getCurrentPosition() + "$ ");
                     orders = scanner.nextLine();
                     commands = orders.trim().split(" ");
                     break;
 
                 default:
+                    // print out log information
                     System.out.printf("Invalid input \"%s\", please try it again.\n", orders);
                     System.out.println(ORDERS);
                     System.out.print(getCurrentPosition() + "$ ");
@@ -241,7 +243,7 @@ public class App
             return FileType.REGULAR_FILE;
         } else {
             System.out.println("Unknown file type");
-            return FileType.UNKOWN;
+            return FileType.UNKNOWN;
         }
     }
 
@@ -269,6 +271,7 @@ public class App
      * upload file to the aws s3
      * @param filePath string path to file
      * @param bucketName the bucket name will be upload to
+     * @return a boolean represent if upload success
      */
     private static boolean uploadFile(String filePath, String bucketName) {
         System.out.format("Uploading %s to S3 bucket %s...\n", filePath, bucketName);
@@ -284,6 +287,12 @@ public class App
         return true;
     }
 
+    /**
+     * upload folder from current file path to bucket
+     * @param filePath the file path in String
+     * @param bucketName the bucket name in String
+     * @return a boolean that if upload success
+     */
     private static boolean uploadFolder(String filePath, String bucketName) {
         final String scriptPath = "src/main/bash_script/aws_s3_up_folder.sh";
         // formatting filePath?
@@ -305,19 +314,22 @@ public class App
         }
 
         // get the exit status
-//        assert process != null;
         if (process.exitValue() == 0) {
             System.out.println("Done.");
         } else {
             System.out.println("Something Wrong.");
             return false;
         }
-//        System.out.printf("exist value: %d\n", process.exitValue());
-        return process.exitValue() == 0;
+
+        return process.exitValue() == EXIT_SUCCESS;
 
     }
 
-
+    /**
+     * list objects in current position (don't list files in folder)
+     * @param bucket_name the bucket name in String
+     * @param prefix the prefix information in String
+     */
     private static void listObjects(String bucket_name, String prefix) {
         if (prefix.length() > 0) {
             prefix += "/";
@@ -337,7 +349,10 @@ public class App
         System.out.println("************************");
     }
 
-
+    /**
+     * list and return all object in current bucket
+     * @param bucketName the name of bucket in String
+     */
     private static void listAllObjects(String bucketName) {
         ListObjectsV2Result result = S3.listObjectsV2(bucketName);
         List<S3ObjectSummary> objects = result.getObjectSummaries();
@@ -354,11 +369,9 @@ public class App
     private static boolean downloadFiles(String filePath, String targetPath) {
         final String scriptPath = "src/main/bash_script/aws_s3_download.sh";
         System.out.format("Downloading %s to folder %s...\n", filePath, targetPath);
-        // TODO: package it to folder then store in target path
-
+        // build a new process to run the download script
         ProcessBuilder processBuilder = new ProcessBuilder(scriptPath, filePath, targetPath);
         Process process;
-//        System.out.printf("filePath: %s, targetPath: %s: \n",filePath, targetPath);
         try {
             System.out.println("Downloading...");
             process = processBuilder.start();
@@ -370,11 +383,13 @@ public class App
             System.err.println(e.getErrorMessage());
             return false;
         }
-//        System.out.printf("return value: %d\n",process.exitValue());
-
-        return process.exitValue() == 0;
+        return process.exitValue() == EXIT_SUCCESS;
     }
 
+    /**
+     *  get current path in String
+     * @return the current path in String. (Without bucket name information)
+     */
     private static String getCurrentPosition() {
         if (CURRENT_PATH == null || CURRENT_PATH.size() == 0) {
             return "";
@@ -384,7 +399,6 @@ public class App
             stringBuilder.append(path).append("/");
         }
         stringBuilder.deleteCharAt(stringBuilder.length()-1);
-//        System.out.println("OUTPUT: " + stringBuilder.toString());
         return stringBuilder.toString();
     }
 
